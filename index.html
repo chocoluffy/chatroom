@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>socket.io first example</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.7.0/jquery.modal.js" type="text/javascript" charset="utf-8"></script>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-modal/0.7.0/jquery.modal.css" type="text/css" media="screen" />
+	<style>
+		html, body {
+			height: 100%;
+		}
+
+		.wrap {
+			min-height: 100%;
+			height: auto !important;
+			height: 100%;
+			margin: 0 auto -10%;
+		}
+
+		.push, .footer {
+			position: absolute;
+			bottom: 0;
+			height: 10%;
+			width: 100%;
+		}
+
+		#greeting {
+			text-align: center;
+		}
+
+		.headline {
+			font-family: times, Times New Roman, times-roman, georgia, serif;
+			color: #444;
+			margin: 0;
+			padding: 8px 0px 6px 0px;
+			font-size: 51px;
+			line-height: 44px;
+			letter-spacing: -2px;
+			font-weight: bold;
+		}
+
+		#messages {
+			position: absolute;
+			top: 10%;
+			width: 100%;
+			height: 73%;
+			overflow: scroll;
+		}
+
+		#container {
+			margin-bottom: -70px;
+		}
+
+		.username {
+			position: relative;
+			top: -80px;
+			left: 100px;
+		}
+
+		/* CSS talk bubble */
+		.talk-bubble {
+			margin: 16px;
+		  	display: inline-block;
+		  	position: relative;
+			width: 200px;
+			left: 80px;
+			top: -90px;
+			height: auto;
+			background-color: #f2f2f2;
+		}
+
+		/* Right triangle, left side slightly down */
+		.tri-right.border.left-in:after{
+			content: ' ';
+			position: absolute;
+			display: block;
+			width: 0;
+			height: 0;
+		  	left: -7px;
+			right: auto;
+		  	top: 6px;
+			bottom: auto;
+			border: 7px solid;
+			border-color: #f2f2f2;
+			transform: rotate(45deg);
+			z-index: -1;
+		}
+
+		p {
+			margin: 2px 5px;
+		}
+
+		#userlist {
+			position: absolute;
+			top: 8%;
+			right: 0;
+			height: 73%;
+			width: 40%;
+			overflow-y: scroll;
+			overflow-x: hidden;
+		}
+
+		.listname {
+			position: relative;
+			text-align: left;
+			left: 94px;
+			top: -50px;
+		}
+
+		.userlistProfile {
+			transform: translate(25px, 0);
+		}
+
+	</style>
+</head>
+<body>
+<div id="username-form" class="modal">
+    <p>Pick an funny pseudo name! like: 蛤蛤蛤😂</p>
+    <input type="text" id="username" class="input-lg" placeholder="username">
+    <button id="username-btn" class="btn btn-primary">Got this!</button>
+</div>
+
+<div class="wrap">
+	<div class="container-fluid">
+		<div id="greeting"></div>
+		<div id="messages"></div>
+		<div class="push"></div>
+	</div>
+</div>
+<div id="userlist">
+	<h2>Online users:</h2>
+</div>
+<div class="footer">
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-xs-8 col-sm-9">
+				<input type="text" id="message-box" class="form-control input-lg" placeholder="Write here...press Enter to send" rows='3'>
+			</div>
+			<div class="col-xs-4 col-sm-3">
+				<button id="message-btn" class="btn btn-primary btn-lg btn-block">Send</button>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+<script>
+	// turn off debug log for all.
+	localStorage.debug=null;
+
+    // obtain username from user.
+    $('#username-form').modal();
+    $('#username').focus();
+
+    // these are Jquery elements.
+	var usernameText;
+	var avatarSrc;
+
+    var username2jqy = function(usrString){
+    	var username = $('<div></div>').addClass('username');
+    	$('<span></span>').text(usrString).appendTo(username);
+    	return username;
+    }
+
+    var avatar2jqy = function(avaString){
+    	return $('<img></img>').attr('src', avaString);
+    }
+
+    var setNameNAvatar = function(){
+    	usernameText = $('#username').val() ? $('#username').val() : 'Anonymous';
+    	$.modal.close();
+    	avatarSrc = 'http://api.adorable.io/avatar/80/' + usernameText;
+    	$('#message-box').focus();
+    }
+
+    $('#username-btn').click(function(e){
+    	setNameNAvatar();
+	});
+
+	$('#username-form').keydown(function(e){
+		if(!e){
+			var e = window.event;
+		}
+		if(e.keyCode == 13){
+			setNameNAvatar();
+		}
+	});
+	
+
+	var socket = io();
+	socket.on('connect', function(){
+		
+		var sendNClearMsg = function(){
+			var messageText = document.getElementById('message-box').value;
+			var message = {
+				'username': usernameText,
+				'avatar' : avatarSrc,
+				'messageText': messageText
+			};
+			if(message){
+				socket.emit('message', message);	
+			}
+			document.getElementById('message-box').value = '';
+		};
+
+
+		document.getElementById('message-btn')
+			.addEventListener('click', function(e){
+				e.preventDefault();
+				sendNClearMsg();
+			});
+
+		// send msg by pressing Enter.
+		document.getElementById('message-box')
+			.addEventListener('keydown', function(e){
+				if(!e){
+					var e = window.event;
+				}
+				if(e.keyCode == 13){
+					sendNClearMsg();
+				}
+			});
+
+		socket.on('greeting-from-server', function(msg){
+			$('#greeting').empty();
+			$('<div></div>').addClass('headline').text(msg.greeting).appendTo($('#greeting'));
+		})
+
+		socket.on('message', function(msg){
+
+			var container = $('<div></div>').attr('id', 'container');
+			var bubble = $('<div></div>').addClass('talk-bubble tri-right left-in border');
+			var textWrapper = $('<div></div>').addClass('talktext').appendTo(bubble);
+			$('<p></p>').html(msg.messageText).appendTo(textWrapper);
+
+			// append the jquery clone to target destination.
+			var nameClone = username2jqy(msg.username);
+			var avaClone = avatar2jqy(msg.avatar);
+
+			avaClone.appendTo(container);
+			nameClone.appendTo(container);
+			bubble.clone().appendTo(container);
+			container.clone().appendTo($('#messages'));
+
+			$('<br>').appendTo($('#messages'));
+
+			// self-adjust scrolling height.
+			var msgWrapper = document.getElementById('messages');
+			msgWrapper.scrollTop = msgWrapper.scrollHeight;
+		});
+
+		socket.on('userlist', function(userlist){
+			$('#userlist').empty();
+			$('<h2></h2>').text('Online users:').appendTo($('#userlist'));
+			Object.keys(userlist).map(function(d){
+				var usrImg = $('<img></img>').attr('src', userlist[d].avatar);
+				var usrName = $('<div></div>').text(userlist[d].username).addClass('listname');
+				var profileWrapper = $('<div></div>').addClass('userlistProfile');
+				usrImg.appendTo(profileWrapper);
+				usrName.appendTo(profileWrapper);
+				profileWrapper.appendTo($('#userlist'));
+			})
+		});
+
+	});
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
