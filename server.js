@@ -12,7 +12,7 @@ var server = http.createServer(function(req, res){
 
 var port = process.env.PORT || 3000;
 server.listen(port);
-console.log('listen on http://localhost:3000');
+console.log('listen on ' + port);
 
 var io = socketIO(server);
 var sockets = [];
