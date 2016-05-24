@@ -1,3 +1,9 @@
+## Usage
+```
+npm install
+node server.js
+```
+
 ## Demo
 
 [1] pick a nickname:
