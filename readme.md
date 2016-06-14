@@ -1,3 +1,11 @@
+please ignore the url above, use [EC2 demo](http://ec2-52-87-208-224.compute-1.amazonaws.com/).
+
+## Usage
+```javascript
+npm install
+node server
+```
+
 ## Demo
 
 [1] pick a nickname:
