@@ -1,4 +1,4 @@
-please ignore the url above, use [EC2 demo](http://ec2-52-87-208-224.compute-1.amazonaws.com/).
+please ignore the url above, use [EC2 demo](http://ec2-52-87-208-224.compute-1.amazonaws.com/chatroom).
 
 ## Usage
 ```javascript
